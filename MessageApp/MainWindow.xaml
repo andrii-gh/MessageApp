@@ -7,12 +7,6 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="4*"/>
-            <ColumnDefinition Width="21*"/>
-        </Grid.ColumnDefinitions>
-        <Button Content="Login Message" Grid.Column="0" Margin="10" Click="Login_button_click"/>
 
-        <Button Click="Button_Click">Clickk Meee</Button>
     </Grid>
 </Window>
