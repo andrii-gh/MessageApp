@@ -13,5 +13,6 @@
         </Grid.ColumnDefinitions>
         <Button Content="Login Message" Grid.Column="0" Margin="10" Click="Login_button_click"/>
 
+        <Button Click="Button_Click">Clickk Meee</Button>
     </Grid>
 </Window>
