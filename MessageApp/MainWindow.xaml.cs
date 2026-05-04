@@ -2,22 +2,13 @@
 using System.Text;
 using System.Text.Json;
 using System.Windows;
-using System.Windows;
 using System.Windows.Interop;
 
 namespace MessageApp
 {
-    /// <summary>
-    /// Interaction logic for MainWindow.xaml
-    /// </summary>
+
     public partial class MainWindow : Window
     {
-        public MainWindow()
-
-        public partial class MainWindow : Window
-        {
-            InitializeComponent();
-        }
         HttpClient client = new HttpClient()
         {
             Timeout = TimeSpan.FromSeconds(3)
@@ -99,8 +90,3 @@ namespace MessageApp
         }
     }
 }
-
-
-    
-
-    
