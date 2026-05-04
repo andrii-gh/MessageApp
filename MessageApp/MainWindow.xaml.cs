@@ -3,8 +3,15 @@ using System.Text;
 using System.Text.Json;
 using System.Windows;
 
+
+
 namespace MessageApp
 {
+    public partial class MainWindow : Window
+    {
+        private AuthService _auth = AuthService.Instance;
+
+        public MainWindow()
 
         public partial class MainWindow : Window
         {
@@ -36,6 +43,29 @@ namespace MessageApp
                     var json = await res.Content.ReadAsStringAsync();
                     var msgs = JsonSerializer.Deserialize<List<string>>(json);
 
+        private void Login_Click(object sender, RoutedEventArgs e)
+        {
+            if (_auth.Login(LoginBox.Text, PasswordBox.Password, out string error))
+            {
+                Session.CurrentUser = LoginBox.Text;
+
+                new HomeWindow().Show();
+                this.Close();
+            }
+            else
+            {
+                ErrorText.Text = error;
+            }
+        }
+
+        private void OpenRegister_Click(object sender, RoutedEventArgs e)
+        {
+            new RegisterWindow().Show();
+        }
+    }
+
+
+}
                     chatBox.Text = string.Join("\n", msgs!);
                 }
                 catch (HttpRequestException)
