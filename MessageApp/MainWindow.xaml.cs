@@ -9,84 +9,39 @@ namespace MessageApp
 
     public partial class MainWindow : Window
     {
-        HttpClient client = new HttpClient()
-        {
-            Timeout = TimeSpan.FromSeconds(3)
-        };
-
-        string url = "https://localhost:5001/api/chat";
+        private AuthService _auth = AuthService.Instance;
 
         public MainWindow()
         {
             InitializeComponent();
-            StartPolling();
         }
 
-        async Task LoadMessages()
+        private void Login_Click(object sender, RoutedEventArgs e)
         {
-            try
+            if (_auth.Login(LoginBox.Text, PasswordBox.Password, out string error))
             {
-                var res = await client.GetAsync(url);
+                Session.CurrentUser = LoginBox.Text;
 
-                if (!res.IsSuccessStatusCode)
-                {
-                    chatBox.Text = "Server error";
-                    return;
-                }
-
-                var json = await res.Content.ReadAsStringAsync();
-                var msgs = JsonSerializer.Deserialize<List<string>>(json);
-
-                chatBox.Text = string.Join("\n", msgs!);
+                new HomeWindow().Show();
+                this.Close();
             }
-            catch (HttpRequestException)
+            else
             {
-                chatBox.Text = "Сервер недоступний";
-            }
-            catch (TaskCanceledException)
-            {
-                chatBox.Text = "Timeout";
+                ErrorText.Text = error;
             }
         }
 
-        private async void Send_Click(object sender, RoutedEventArgs e)
+        private void OpenRegister_Click(object sender, RoutedEventArgs e)
         {
-            if (string.IsNullOrWhiteSpace(msgTb.Text))
-            {
-                MessageBox.Show("Пусте повідомлення!");
-                return;
-            }
-
-            try
-            {
-                var content = new StringContent(
-                    JsonSerializer.Serialize(msgTb.Text),
-                    Encoding.UTF8,
-                    "application/json");
-
-                var res = await client.PostAsync(url, content);
-
-                if (!res.IsSuccessStatusCode)
-                {
-                    MessageBox.Show("Помилка відправки");
-                    return;
-                }
-
-                msgTb.Clear();
-            }
-            catch
-            {
-                MessageBox.Show("Помилка мережі");
-            }
-        }
-
-        async void StartPolling()
-        {
-            while (true)
-            {
-                await LoadMessages();
-                await Task.Delay(2000);
-            }
+            new RegisterWindow().Show();
         }
     }
 }
+
+       
+
+       
+
+           
+
+       
