@@ -5,8 +5,23 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MessageApp"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
-    <Grid>
+        Title="MainWindow" Height="450" Width="700">
+    <Grid Background="#1E1E1E">
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="50"/>
+        </Grid.RowDefinitions>
 
+        <TextBox x:Name="chatBox"
+                 Margin="5"
+                 IsReadOnly="True"
+                 Background="#2D2D30"
+                 Foreground="White"
+                 TextWrapping="Wrap"/>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal">
+            <TextBox x:Name="msgTb" Width="450" Margin="5"/>
+            <Button Content="Send" Width="80" Margin="5" Click="Send_Click"/>
+        </StackPanel>
     </Grid>
 </Window>
