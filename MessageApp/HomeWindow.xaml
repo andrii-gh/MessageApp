@@ -7,9 +7,20 @@
         mc:Ignorable="d"
         Title="HomeWindow" Height="200" Width="300">
     <Grid>
-        <TextBlock x:Name="UserText"
-                   HorizontalAlignment="Center"
-                   VerticalAlignment="Center"
-                   FontSize="16"/>
+        <Grid.RowDefinitions>
+            <RowDefinition/>
+            <RowDefinition Height="50"/>
+        </Grid.RowDefinitions>
+
+
+        <TextBox x:Name="ChatBox"
+             IsReadOnly="True"
+             TextWrapping="Wrap"
+             Margin="5"/>
+
+        <StackPanel Grid.Row="1" Orientation="Horizontal">
+            <TextBox x:Name="MsgBox" Width="300" Margin="5"/>
+            <Button Content="Send" Click="Send_Click"/>
+        </StackPanel>
     </Grid>
-</Window>
+    </Window>
