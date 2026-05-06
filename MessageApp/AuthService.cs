@@ -2,7 +2,7 @@
 {
     public class AuthService
     {
-        private static AuthService _instance;
+        private static AuthService? _instance;
         public static AuthService Instance => _instance ??= new AuthService();
 
         private List<User> _users = new List<User>();
