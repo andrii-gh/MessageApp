@@ -5,17 +5,18 @@ namespace MessageApp
     public partial class HomeWindow : Window
     {
         LocalServer server = new();
-        HttpChatService service = new(); 
+        HttpChatService service = new();
+
+        bool menuOpen = true;
 
         public HomeWindow()
         {
             InitializeComponent();
-   
-            server.Start();
-            StartPolling();
-            
-        }
 
+            server.Start();
+
+            LoginText.Text = $"Login: {Session.CurrentUser}";
+        }
 
         private async void Send_Click(object sender, RoutedEventArgs e)
         {
@@ -25,27 +26,44 @@ namespace MessageApp
                 return;
             }
 
-            await service.Send($"{Session.CurrentUser}: {MsgBox.Text}");
+            string msg = $"{Session.CurrentUser}: {MsgBox.Text}";
 
-            ChatBox.AppendText($"{Session.CurrentUser}: {MsgBox.Text}\n");
+            await service.Send(msg);
+
+            ChatBox.AppendText(msg + "\n");
 
             MsgBox.Clear();
         }
 
-        async Task LoadMessages()
+        private void Menu_Click(object sender, RoutedEventArgs e)
         {
-            var msgs = await service.GetMessages();
+            menuOpen = !menuOpen;
 
-            ChatBox.Text = string.Join("\n", msgs ?? new List<string>());
-        }
-
-        async void StartPolling()
-        {
-            while (true)
+            if (menuOpen)
             {
-                await LoadMessages();
-                await Task.Delay(2000); 
+                SidebarColumn.Width = new GridLength(200);
+
+                Sidebar.Visibility = Visibility.Visible;
+
+                OpenMenuButton.Visibility = Visibility.Collapsed;
+            }
+            else
+            {
+                SidebarColumn.Width = new GridLength(0);
+
+                Sidebar.Visibility = Visibility.Collapsed;
+
+                OpenMenuButton.Visibility = Visibility.Visible;
             }
         }
+
+        private void Logout_Click(object sender, RoutedEventArgs e)
+        {
+            Session.CurrentUser = null;
+
+            new MainWindow().Show();
+
+            Close();
+        }
     }
-}//пп
+}
