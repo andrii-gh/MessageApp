@@ -21,12 +21,13 @@ namespace MessageApp
         {
             if (string.IsNullOrWhiteSpace(MsgBox.Text))
             {
-                MessageBox.Show("Empty message");
+                MessageBox.Show("Enter message");
                 return;
             }
 
+            await service.Send($"{Session.CurrentUser}: {MsgBox.Text}");
 
-                MessageBox.Show("Network error");
+            ChatBox.AppendText($"{Session.CurrentUser}: {MsgBox.Text}\n");
 
             MsgBox.Clear();
         }
