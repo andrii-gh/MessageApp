@@ -11,7 +11,7 @@ namespace MessageApp
             Timeout = TimeSpan.FromSeconds(3)
         };
 
-        string url = "http://localhost:5000/api/chat/";
+        string url = "http://localhost:8080/api/chat/";
 
         public async Task<List<string>> GetMessages()
         {
