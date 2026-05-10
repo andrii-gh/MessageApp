@@ -1,4 +1,5 @@
-﻿using System.Net.Http;
+﻿using System.Buffers.Text;
+using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 
@@ -35,6 +36,34 @@ namespace MessageApp
                 "application/json");
 
             await client.PostAsync(url, content);
+        }
+        public async Task CreateChat(string name)
+        {
+            var content = new StringContent(
+                JsonSerializer.Serialize(name),
+                Encoding.UTF8,
+                "application/json");
+
+            await client.PostAsync(
+                url + "api/chat",
+                content);
+        }
+        public async Task<List<Chat>> GetChats()
+        {
+            var json =
+                await client.GetStringAsync(url + "api/chat");
+
+            return JsonSerializer.Deserialize<List<Chat>>(json)
+                   ?? new();
+        }
+        public async Task<List<Message>> GetMessages(int chatId)
+        {
+            var json =
+                await client.GetStringAsync(
+                    url + "api/messages/" + chatId);
+
+            return JsonSerializer.Deserialize<List<Message>>(json)
+                   ?? new();
         }
     }
 }
