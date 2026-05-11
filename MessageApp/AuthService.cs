@@ -5,7 +5,28 @@
         private static AuthService? _instance;
         public static AuthService Instance => _instance ??= new AuthService();
 
-        private List<User> _users = new List<User>();
+
+        private List<User> _users = new()
+        {
+            new User
+            {
+                Login = "Sasha",
+                Password = "1234"
+            },
+
+            new User
+            {
+                Login = "Andriy",
+                Password = "1234"
+            },
+                new User
+                {
+                    Login = "Artem",
+                    Password = "1234"
+                }
+
+
+        };
 
         public bool Register(string login, string password, out string error)
         {
@@ -27,6 +48,7 @@
             return true;
         }
 
+
         public bool Login(string login, string password, out string error)
         {
             error = "";
@@ -40,6 +62,7 @@
             }
 
             return true;
+
         }
     }
 }
