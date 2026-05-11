@@ -4,11 +4,17 @@ using System.Windows;
 
 namespace MessageApp
 {
-    /// <summary>
-    /// Interaction logic for App.xaml
-    /// </summary>
     public partial class App : Application
     {
+        private LocalServer server;
+
+        protected override void OnStartup(StartupEventArgs e)
+        {
+            base.OnStartup(e);
+            server = new LocalServer();
+            server.Start();
+            MessageBox.Show("Server started");
+        }
     }
 
 }

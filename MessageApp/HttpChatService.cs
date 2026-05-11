@@ -7,63 +7,39 @@ namespace MessageApp
 {
     public class HttpChatService
     {
-        HttpClient client = new()
-        {
-            Timeout = TimeSpan.FromSeconds(3)
-        };
+        HttpClient client = new() { Timeout = TimeSpan.FromSeconds(10) };
+        string baseUrl = "http://localhost:5000/api/";
 
-        string url = "http://localhost:5000/api/chat/";
-
-        public async Task<List<string>> GetMessages()
+        public async Task<List<Chat>> GetChats()
         {
             try
             {
-                var res = await client.GetAsync(url);
-                var json = await res.Content.ReadAsStringAsync();
-                return JsonSerializer.Deserialize<List<string>>(json) ?? new();
+                var json = await client.GetStringAsync(baseUrl + "chats");
+                return JsonSerializer.Deserialize<List<Chat>>(json) ?? new();
             }
-            catch
-            {
-                return new();
-            }
+            catch { return new(); }
         }
 
-        public async Task Send(string msg)
-        {
-            var content = new StringContent(
-                JsonSerializer.Serialize(msg),
-                Encoding.UTF8,
-                "application/json");
-
-            await client.PostAsync(url, content);
-        }
         public async Task CreateChat(string name)
         {
-            var content = new StringContent(
-                JsonSerializer.Serialize(name),
-                Encoding.UTF8,
-                "application/json");
-
-            await client.PostAsync(
-                url + "api/chat",
-                content);
+            var content = new StringContent(JsonSerializer.Serialize(name), Encoding.UTF8, "application/json");
+            await client.PostAsync(baseUrl + "chats", content);
         }
-        public async Task<List<Chat>> GetChats()
-        {
-            var json =
-                await client.GetStringAsync(url + "api/chat");
 
-            return JsonSerializer.Deserialize<List<Chat>>(json)
-                   ?? new();
-        }
         public async Task<List<Message>> GetMessages(int chatId)
         {
-            var json =
-                await client.GetStringAsync(
-                    url + "api/messages/" + chatId);
+            try
+            {
+                var json = await client.GetStringAsync(baseUrl + $"messages?chatId={chatId}");
+                return JsonSerializer.Deserialize<List<Message>>(json) ?? new();
+            }
+            catch { return new(); }
+        }
 
-            return JsonSerializer.Deserialize<List<Message>>(json)
-                   ?? new();
+        public async Task SendMessage(Message msg)
+        {
+            var content = new StringContent(JsonSerializer.Serialize(msg), Encoding.UTF8, "application/json");
+            await client.PostAsync(baseUrl + "messages", content);
         }
     }
 }
