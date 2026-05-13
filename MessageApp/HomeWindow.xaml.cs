@@ -3,33 +3,39 @@ using System.Windows.Threading;
 
 namespace MessageApp
 {
-
     public partial class HomeWindow : Window
     {
         HttpChatService service = new();
         private int currentChatId = 0;
         private DispatcherTimer timer = new();
         private string currentUser = Session.CurrentUser ?? "Unknown";
+        private List<Chat> allChats = new();
+        private List<Message> currentMessages = new();
 
         public HomeWindow()
         {
             InitializeComponent();
+
             LoginText.Text = $"Login: {currentUser}";
+
             LoadChats();
 
             timer.Interval = TimeSpan.FromSeconds(2);
+
             timer.Tick += async (s, e) =>
             {
                 if (currentChatId != 0)
                     await LoadMessages();
             };
+
             timer.Start();
         }
 
-
         private async void LoadChats()
         {
-            ChatsList.ItemsSource = await service.GetChats();
+            allChats = await service.GetChats();
+
+            ChatsList.ItemsSource = allChats;
         }
 
         private async void CreateChat_Click(object sender, RoutedEventArgs e)
@@ -37,31 +43,44 @@ namespace MessageApp
             try
             {
                 string name = "Chat " + DateTime.Now.Second;
+
                 await service.CreateChat(name);
+
                 LoadChats();
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error of creating chat: {ex.Message}");
+                MessageBox.Show(ex.Message);
             }
-
         }
 
-        private async void ChatsList_SelectionChanged(object sender, System.Windows.Controls.SelectionChangedEventArgs e)
+        private async void ChatsList_SelectionChanged(object sender,
+            System.Windows.Controls.SelectionChangedEventArgs e)
         {
             if (ChatsList.SelectedItem is Chat chat)
             {
                 currentChatId = chat.Id;
+
                 await LoadMessages();
             }
         }
 
         private async Task LoadMessages()
         {
-            var msgs = await service.GetMessages(currentChatId);
+            currentMessages = await service.GetMessages(currentChatId);
+
+            ShowMessages(currentMessages);
+        }
+
+        private void ShowMessages(List<Message> msgs)
+        {
             ChatBox.Clear();
+
             foreach (var msg in msgs)
-                ChatBox.AppendText(msg.ToString() + "\n");
+            {
+                ChatBox.AppendText(msg + "\n");
+            }
+
             ChatBox.ScrollToEnd();
         }
 
@@ -81,22 +100,61 @@ namespace MessageApp
             };
 
             await service.SendMessage(msg);
+
             MsgBox.Clear();
+
             await LoadMessages();
+        }
+
+        private void SearchChatBox_TextChanged(object sender,
+            System.Windows.Controls.TextChangedEventArgs e)
+        {
+            string text = SearchChatBox.Text.ToLower();
+
+            var filtered = allChats
+                .Where(c => c.Name.ToLower().Contains(text))
+                .ToList();
+
+            ChatsList.ItemsSource = filtered;
+        }
+
+        private void SearchMessageBox_TextChanged(object sender,
+            System.Windows.Controls.TextChangedEventArgs e)
+        {
+            string text = SearchMessageBox.Text.ToLower();
+
+            var filtered = currentMessages
+                .Where(m =>
+                    m.Text.ToLower().Contains(text) ||
+                    m.Username.ToLower().Contains(text))
+                .ToList();
+
+            ShowMessages(filtered);
         }
 
         private void Menu_Click(object sender, RoutedEventArgs e)
         {
             bool menuOpen = Sidebar.Visibility == Visibility.Visible;
-            Sidebar.Visibility = menuOpen ? Visibility.Collapsed : Visibility.Visible;
-            SidebarColumn.Width = menuOpen ? new GridLength(0) : new GridLength(200);
-            OpenMenuButton.Visibility = menuOpen ? Visibility.Visible : Visibility.Collapsed;
+
+            Sidebar.Visibility = menuOpen
+                ? Visibility.Collapsed
+                : Visibility.Visible;
+
+            SidebarColumn.Width = menuOpen
+                ? new GridLength(0)
+                : new GridLength(200);
+
+            OpenMenuButton.Visibility = menuOpen
+                ? Visibility.Visible
+                : Visibility.Collapsed;
         }
 
         private void Logout_Click(object sender, RoutedEventArgs e)
         {
             Session.CurrentUser = null;
+
             new MainWindow().Show();
+
             Close();
         }
     }

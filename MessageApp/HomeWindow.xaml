@@ -51,12 +51,23 @@
                             Height="35"
                             Margin="10"
                             Click="CreateChat_Click"/>
+                    <TextBox x:Name="SearchChatBox"
+                            Height="30"
+                            Margin="10"
+                            VerticalContentAlignment="Center"
+                            TextChanged="SearchChatBox_TextChanged"/>
+
+                    <TextBox x:Name="SearchMessageBox"
+                             Height="30"
+                             Margin="10"
+                             VerticalContentAlignment="Center"
+                             TextChanged="SearchMessageBox_TextChanged"/>
 
                     <ListBox x:Name="ChatsList"
                              Margin="10"
-                             Height="250"
-                             DisplayMemberPath="Name"
-                             SelectionChanged="ChatsList_SelectionChanged"/>
+         Height="200"
+         DisplayMemberPath="Name"
+         SelectionChanged="ChatsList_SelectionChanged"/>
                 </StackPanel>
 
             </Grid>
