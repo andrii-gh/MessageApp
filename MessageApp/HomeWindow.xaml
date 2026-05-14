@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MessageApp"
         mc:Ignorable="d"
-        Title="Messenger" Height="500" Width="900"
+        Title="Messenger" Height="600" Width="900"
         Background="#1E1E2E">
     <Window.Resources>
         <SolidColorBrush x:Key="SidebarBg" Color="#1A1A2A"/>
@@ -108,13 +108,13 @@
                             Margin="10"
                             Click="CreateChat_Click"/>
                     <TextBox x:Name="SearchChatBox"
-                            Height="30"
+                            Height="40"
                             Margin="10"
                             VerticalContentAlignment="Center"
                             TextChanged="SearchChatBox_TextChanged"/>
 
                     <TextBox x:Name="SearchMessageBox"
-                             Height="30"
+                             Height="40"
                              Margin="10"
                              VerticalContentAlignment="Center"
                              TextChanged="SearchMessageBox_TextChanged"/>

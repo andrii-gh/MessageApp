@@ -165,6 +165,44 @@ namespace MessageApp
                 e.Handled = true;
             }
         }
+
+
+        private async void SearchMessageBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            string text = SearchMessageBox.Text.ToLower();
+
+            if (string.IsNullOrWhiteSpace(text))
+            {
+                await LoadMessages();
+                return;
+            }
+
+            if (currentChatId != 0)
+            {
+                var allMessages = await service.GetMessages(currentChatId);
+                var filtered = allMessages
+                    .Where(m => m.Text.ToLower().Contains(text) ||
+                                m.Username.ToLower().Contains(text))
+                    .ToList();
+                ShowMessages(filtered);
+            }
+            else
+            {
+                ChatBox.Clear();
+                ChatBox.AppendText("Select a chat first to search messages\n");
+            }
+        }
+        private void SearchChatBox_TextChanged(object sender, System.Windows.Controls.TextChangedEventArgs e)
+        {
+            string text = SearchChatBox.Text.ToLower();
+
+            var filtered = allChats
+                .Where(c => c.Name.ToLower().Contains(text))
+                .ToList();
+
+            ChatsList.ItemsSource = filtered;
+        }
+
         private async Task LoadUserProfile()
         {
             var profile = await service.GetUserProfile(currentUser);
