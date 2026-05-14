@@ -5,17 +5,73 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:MessageApp"
         mc:Ignorable="d"
-        Title="Messenger" Height="500" Width="800">
+        Title="Messenger" Height="500" Width="900"
+        Background="#1E1E2E">
+    <Window.Resources>
+        <SolidColorBrush x:Key="SidebarBg" Color="#1A1A2A"/>
+        <SolidColorBrush x:Key="CardBg" Color="#2D2D3A"/>
+        <SolidColorBrush x:Key="InputBg" Color="#3D3D4A"/>
+        <SolidColorBrush x:Key="Accent" Color="#7C4DFF"/>
+        <SolidColorBrush x:Key="TextPrimary" Color="#FFFFFF"/>
+        <SolidColorBrush x:Key="TextSecondary" Color="#B0B0C0"/>
+        <SolidColorBrush x:Key="OnlineGreen" Color="#4CAF50"/>
+
+        <Style TargetType="ListBox">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+        </Style>
+
+        <Style TargetType="ListBoxItem">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="Padding" Value="12,12"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Style.Triggers>
+                <Trigger Property="IsSelected" Value="True">
+                    <Setter Property="Background" Value="{StaticResource Accent}"/>
+                </Trigger>
+                <Trigger Property="IsMouseOver" Value="True">
+                    <Setter Property="Background" Value="#3D3D4A"/>
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style TargetType="TextBox">
+            <Setter Property="Background" Value="{StaticResource InputBg}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextPrimary}"/>
+            <Setter Property="BorderBrush" Value="#4A4A5A"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="10,8"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="CaretBrush" Value="{StaticResource TextPrimary}"/>
+        </Style>
+
+        <Style TargetType="Button">
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="BorderThickness" Value="0"/>
+        </Style>
+    </Window.Resources>
+
     <Grid>
         <Grid.ColumnDefinitions>
             <ColumnDefinition x:Name="SidebarColumn" Width="200"/>
             <ColumnDefinition Width="*"/>
         </Grid.ColumnDefinitions>
 
+
         <Border x:Name="Sidebar"
                 Background="#2D2D30">
 
             <Grid>
+                <StackPanel>
+                    <Button Click="Profile_Click" Background="Transparent" BorderThickness="0" Cursor="Hand" HorizontalAlignment="Left" Margin="10,10,0,5">
+                        <Border Width="40" Height="40" CornerRadius="20" Background="#7C4DFF">
+                            <Image x:Name="AvatarImage" Source="Images/Avatar-PNG-Transparent-Image.png" Width="36" Height="36" Stretch="UniformToFill"/>
+                        </Border>
+                    </Button>
+                </StackPanel>
 
                 <Button Content="☰"
                         Width="40"

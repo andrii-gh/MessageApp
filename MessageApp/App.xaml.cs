@@ -1,6 +1,4 @@
-﻿using System.Configuration;
-using System.Data;
-using System.Windows;
+﻿using System.Windows;
 
 namespace MessageApp
 {
@@ -16,5 +14,4 @@ namespace MessageApp
             MessageBox.Show("Server started");
         }
     }
-
 }

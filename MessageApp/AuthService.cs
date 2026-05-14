@@ -8,24 +8,9 @@
 
         private List<User> _users = new()
         {
-            new User
-            {
-                Login = "Sasha",
-                Password = "1234"
-            },
-
-            new User
-            {
-                Login = "Andriy",
-                Password = "1234"
-            },
-                new User
-                {
-                    Login = "Artem",
-                    Password = "1234"
-                }
-
-
+            new User { Login = "Sasha", Password = "1234", Nickname = "Sasha", AvatarPath = "", BirthDate = null },
+            new User { Login = "Andriy", Password = "1234", Nickname = "Andriy", AvatarPath = "", BirthDate = null },
+            new User { Login = "Artem", Password = "1234", Nickname = "Artem", AvatarPath = "", BirthDate = null }
         };
 
         public bool Register(string login, string password, out string error)
@@ -45,6 +30,25 @@
             }
 
             _users.Add(new User { Login = login, Password = password });
+            return true;
+        }
+        public User? GetUser(string login)
+        {
+            return _users.FirstOrDefault(u => u.Login == login);
+        }
+
+        public bool UpdateUser(string login, Dictionary<string, object> updates)
+        {
+            var user = GetUser(login);
+            if (user == null) return false;
+
+            if (updates.TryGetValue("nickname", out var nickname))
+                user.Nickname = nickname?.ToString() ?? user.Login;
+            if (updates.TryGetValue("avatarPath", out var avatarPath))
+                user.AvatarPath = avatarPath?.ToString() ?? "";
+            if (updates.TryGetValue("birthDate", out var birthDate) && birthDate != null)
+                user.BirthDate = DateTime.Parse(birthDate.ToString());
+
             return true;
         }
 
