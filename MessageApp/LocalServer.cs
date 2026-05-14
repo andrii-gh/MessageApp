@@ -96,9 +96,11 @@ namespace MessageApp
                         {
                             msg.Id = nextMessageId++;
                             msg.Timestamp = DateTime.Now;
+
                             messages.Add(msg);
 
                             var botReply = GetBotReply(msg.Text);
+
                             if (!string.IsNullOrEmpty(botReply))
                             {
                                 var botMessage = new Message
@@ -108,7 +110,9 @@ namespace MessageApp
                                     Text = botReply,
                                     Timestamp = DateTime.Now
                                 };
+
                                 botMessage.Id = nextMessageId++;
+
                                 messages.Add(botMessage);
                             }
                         }
