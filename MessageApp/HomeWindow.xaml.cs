@@ -1,4 +1,7 @@
 ﻿using System.Windows;
+using System.IO;
+using System.Windows.Input;
+using System.Windows.Media.Imaging;
 using System.Windows.Threading;
 
 namespace MessageApp
@@ -19,6 +22,7 @@ namespace MessageApp
             LoginText.Text = $"Login: {currentUser}";
 
             LoadChats();
+            _ = LoadUserProfile();
 
             timer.Interval = TimeSpan.FromSeconds(2);
 
@@ -29,6 +33,7 @@ namespace MessageApp
             };
 
             timer.Start();
+
         }
 
         private async void LoadChats()
@@ -106,31 +111,6 @@ namespace MessageApp
             await LoadMessages();
         }
 
-        private void SearchChatBox_TextChanged(object sender,
-            System.Windows.Controls.TextChangedEventArgs e)
-        {
-            string text = SearchChatBox.Text.ToLower();
-
-            var filtered = allChats
-                .Where(c => c.Name.ToLower().Contains(text))
-                .ToList();
-
-            ChatsList.ItemsSource = filtered;
-        }
-
-        private void SearchMessageBox_TextChanged(object sender,
-            System.Windows.Controls.TextChangedEventArgs e)
-        {
-            string text = SearchMessageBox.Text.ToLower();
-
-            var filtered = currentMessages
-                .Where(m =>
-                    m.Text.ToLower().Contains(text) ||
-                    m.Username.ToLower().Contains(text))
-                .ToList();
-
-            ShowMessages(filtered);
-        }
 
         private void Menu_Click(object sender, RoutedEventArgs e)
         {
@@ -156,6 +136,45 @@ namespace MessageApp
             new MainWindow().Show();
 
             Close();
+        }
+        private void Profile_Click(object sender, RoutedEventArgs e)
+        {
+            var settings = new SettingsWindow(this);
+            settings.Owner = this;
+            settings.ShowDialog();
+        }
+
+        public void UpdateUserInfo()
+        {
+            if (!string.IsNullOrEmpty(UserSettings.Instance.AvatarPath) && File.Exists(UserSettings.Instance.AvatarPath))
+            {
+                AvatarImage.Source = new BitmapImage(new Uri(UserSettings.Instance.AvatarPath));
+            }
+
+            string displayName = string.IsNullOrEmpty(UserSettings.Instance.Nickname)
+                ? Session.CurrentUser
+                : UserSettings.Instance.Nickname;
+            Title = $"Messenger - {displayName}";
+        }
+
+        private void MsgBox_KeyDown(object sender, KeyEventArgs e)
+        {
+            if (e.Key == Key.Enter && Keyboard.Modifiers != ModifierKeys.Shift)
+            {
+                Send_Click(sender, e);
+                e.Handled = true;
+            }
+        }
+        private async Task LoadUserProfile()
+        {
+            var profile = await service.GetUserProfile(currentUser);
+            if (profile != null)
+            {
+                UserSettings.Instance.Nickname = profile.Nickname;
+                UserSettings.Instance.BirthDate = profile.BirthDate;
+                UserSettings.Instance.AvatarPath = profile.AvatarPath;
+                UpdateUserInfo();
+            }
         }
     }
 }

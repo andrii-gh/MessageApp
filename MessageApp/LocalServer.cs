@@ -55,6 +55,23 @@ namespace MessageApp
                         }
                     }
                 }
+                else if (request.HttpMethod == "GET" && path.StartsWith("/api/user/"))
+                {
+                    var login = path.Split('/').Last();
+                    var user = AuthService.Instance.GetUser(login);
+
+                    if (user != null)
+                    {
+                        var profile = new { user.Nickname, user.AvatarPath, user.BirthDate };
+                        var json = JsonSerializer.Serialize(profile);
+                        var buffer = Encoding.UTF8.GetBytes(json);
+                        response.OutputStream.Write(buffer, 0, buffer.Length);
+                    }
+                    else
+                    {
+                        response.StatusCode = 404;
+                    }
+                }
                 else if (request.HttpMethod == "POST" && path == "/api/chats")
                 {
 
@@ -112,6 +129,19 @@ namespace MessageApp
                     }
                     response.StatusCode = 200;
                 }
+                else if (request.HttpMethod == "POST" && path.StartsWith("/api/user/"))
+                {
+                    var login = path.Split('/').Last();
+                    using var reader = new StreamReader(request.InputStream);
+                    var body = await reader.ReadToEndAsync();
+                    var updates = JsonSerializer.Deserialize<Dictionary<string, object>>(body);
+
+                    if (AuthService.Instance.UpdateUser(login, updates))
+                        response.StatusCode = 200;
+                    else
+                        response.StatusCode = 404;
+                }
+
 
                 response.Close();
                

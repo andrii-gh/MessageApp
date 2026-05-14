@@ -9,10 +9,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Images\Avatar-PNG-Transparent-Image.png" />
     <None Remove="Images\unnamed.png" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Images\Avatar-PNG-Transparent-Image.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Content>
     <Content Include="Images\unnamed.png">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Content>
