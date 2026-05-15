@@ -118,15 +118,6 @@ namespace MessageApp
                         }
                     }
 
-                    if (msg != null)
-                    {
-                        lock (_lock)
-                        {
-                            msg.Id = nextMessageId++;
-                            msg.Timestamp = DateTime.Now;
-                            messages.Add(msg);
-                        }
-                    }
                     response.StatusCode = 200;
                 }
                 else if (request.HttpMethod == "POST" && path.StartsWith("/api/user/"))

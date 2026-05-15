@@ -8,6 +8,7 @@ namespace MessageApp
 {
     public partial class HomeWindow : Window
     {
+        private bool isLoading = false;
         HttpChatService service = new();
         private int currentChatId = 0;
         private DispatcherTimer timer = new();
@@ -28,11 +29,19 @@ namespace MessageApp
 
             timer.Tick += async (s, e) =>
             {
-                if (currentChatId != 0)
-                    await LoadMessages();
-            };
+                if (currentChatId == 0 || isLoading)
+                    return;
 
-            timer.Start();
+                try
+                {
+                    isLoading = true;
+                    await LoadMessages();
+                }
+                finally
+                {
+                    isLoading = false;
+                }
+            };
 
         }
 
@@ -72,19 +81,20 @@ namespace MessageApp
 
         private async Task LoadMessages()
         {
+            LoadingText.Visibility = Visibility.Visible;
+
             currentMessages = await service.GetMessages(currentChatId);
 
             ShowMessages(currentMessages);
+
+            LoadingText.Visibility = Visibility.Collapsed;
         }
 
         private void ShowMessages(List<Message> msgs)
         {
             ChatBox.Clear();
 
-            foreach (var msg in msgs)
-            {
-                ChatBox.AppendText(msg + "\n");
-            }
+            ChatBox.Text = string.Join("\n", msgs);
 
             ChatBox.ScrollToEnd();
         }
