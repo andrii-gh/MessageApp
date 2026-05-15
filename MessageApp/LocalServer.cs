@@ -2,18 +2,12 @@
 using System.Net;
 using System.Text;
 using System.Text.Json;
-using System.Windows.Interop;
 
 namespace MessageApp
 {
     public class LocalServer
     {
         private HttpListener listener = null!;
-        private List<Message> messages = new();
-        private List<Chat> chats = new();
-        private int nextChatId = 1;
-        private int nextMessageId = 1;
-        private readonly object _lock = new();
 
         public void Start()
         {
@@ -32,133 +26,230 @@ namespace MessageApp
                 var response = context.Response;
                 string path = request.Url.AbsolutePath;
 
-                if (request.HttpMethod == "GET" && path == "/api/chats")
+                try
                 {
-                    lock (_lock)
+                    // GET: /api/chats - отримати всі чати
+                    if (request.HttpMethod == "GET" && path == "/api/chats")
                     {
-                        var json = JsonSerializer.Serialize(chats);
-                        var buffer = Encoding.UTF8.GetBytes(json);
-                        response.OutputStream.Write(buffer, 0, buffer.Length);
+                        var chats = await FileDatabase.Instance.GetChats();
+                        var json = JsonSerializer.Serialize(chats.Select(c => new { c.Id, c.Name }));
+                        SendResponse(response, json);
                     }
-                }
-                else if (request.HttpMethod == "GET" && path.StartsWith("/api/messages"))
-                {
-                    var query = System.Web.HttpUtility.ParseQueryString(request.Url.Query);
-                    if (int.TryParse(query["chatId"], out int chatId))
+                    // GET: /api/messages?chatId=X - отримати повідомлення чату
+                    else if (request.HttpMethod == "GET" && path.StartsWith("/api/messages"))
                     {
-                        lock (_lock)
+                        var query = System.Web.HttpUtility.ParseQueryString(request.Url.Query);
+                        if (int.TryParse(query["chatId"], out int chatId))
                         {
-                            var msgs = messages.Where(x => x.ChatId == chatId).ToList();
+                            var msgs = await FileDatabase.Instance.GetMessages(chatId);
                             var json = JsonSerializer.Serialize(msgs);
-                            var buffer = Encoding.UTF8.GetBytes(json);
-                            response.OutputStream.Write(buffer, 0, buffer.Length);
+                            SendResponse(response, json);
+                        }
+                        else
+                        {
+                            response.StatusCode = 400;
+                            response.Close();
                         }
                     }
-                }
-                else if (request.HttpMethod == "GET" && path.StartsWith("/api/user/"))
-                {
-                    var login = path.Split('/').Last();
-                    var user = AuthService.Instance.GetUser(login);
+                    // GET: /api/user/{login} - отримати профіль користувача
+                    else if (request.HttpMethod == "GET" && path.StartsWith("/api/user/"))
+                    {
+                        var login = path.Split('/').Last();
+                        var user = await FileDatabase.Instance.GetUser(login);
 
-                    if (user != null)
-                    {
-                        var profile = new { user.Nickname, user.AvatarPath, user.BirthDate };
-                        var json = JsonSerializer.Serialize(profile);
-                        var buffer = Encoding.UTF8.GetBytes(json);
-                        response.OutputStream.Write(buffer, 0, buffer.Length);
-                    }
-                    else
-                    {
-                        response.StatusCode = 404;
-                    }
-                }
-                else if (request.HttpMethod == "POST" && path == "/api/chats")
-                {
-
-                    using var reader = new StreamReader(request.InputStream);
-                    var body = await reader.ReadToEndAsync();
-                    var name = JsonSerializer.Deserialize<string>(body);
-
-                    lock (_lock)
-                    {
-                        chats.Add(new Chat { Id = nextChatId++, Name = name ?? "Chat" });
-                    }
-                    response.StatusCode = 200;
-                }
-                else if (request.HttpMethod == "POST" && path == "/api/messages")
-                {
-                    using var reader = new StreamReader(request.InputStream);
-                    var body = await reader.ReadToEndAsync();
-                    var msg = JsonSerializer.Deserialize<Message>(body);
-                    if (msg != null)
-                    {
-                        lock (_lock)
+                        if (user != null)
                         {
-                            msg.Id = nextMessageId++;
-                            msg.Timestamp = DateTime.Now;
+                            var profile = new { user.Nickname, user.AvatarPath, user.BirthDate };
+                            var json = JsonSerializer.Serialize(profile);
+                            SendResponse(response, json);
+                        }
+                        else
+                        {
+                            response.StatusCode = 404;
+                            response.Close();
+                        }
+                    }
+                    // GET: /api/todos?chatId=X - отримати задачі чату
+                    else if (request.HttpMethod == "GET" && path == "/api/todos")
+                    {
+                        var query = System.Web.HttpUtility.ParseQueryString(request.Url.Query);
+                        if (int.TryParse(query["chatId"], out int chatId))
+                        {
+                            var items = await FileDatabase.Instance.GetTodos(chatId);
+                            var json = JsonSerializer.Serialize(items);
+                            SendResponse(response, json);
+                        }
+                        else
+                        {
+                            response.StatusCode = 400;
+                            response.Close();
+                        }
+                    }
+                    // POST: /api/chats - створити новий чат
+                    else if (request.HttpMethod == "POST" && path == "/api/chats")
+                    {
+                        using var reader = new StreamReader(request.InputStream);
+                        var body = await reader.ReadToEndAsync();
+                        var name = JsonSerializer.Deserialize<string>(body);
 
-                            messages.Add(msg);
+                        var chat = await FileDatabase.Instance.CreateChat(name ?? "Chat", "");
+                        response.StatusCode = 200;
+                        response.Close();
+                    }
+                    // POST: /api/messages - відправити повідомлення
+                    else if (request.HttpMethod == "POST" && path == "/api/messages")
+                    {
+                        using var reader = new StreamReader(request.InputStream);
+                        var body = await reader.ReadToEndAsync();
+                        var msg = JsonSerializer.Deserialize<Message>(body);
 
+                        if (msg != null)
+                        {
+                            await FileDatabase.Instance.SaveMessage(msg.ChatId, msg.Username, msg.Text);
+
+                            // Відповідь бота
                             var botReply = GetBotReply(msg.Text);
-
                             if (!string.IsNullOrEmpty(botReply))
                             {
-                                var botMessage = new Message
-                                {
-                                    ChatId = msg.ChatId,
-                                    Username = "BOT",
-                                    Text = botReply,
-                                    Timestamp = DateTime.Now
-                                };
-
-                                botMessage.Id = nextMessageId++;
-
-                                messages.Add(botMessage);
+                                await FileDatabase.Instance.SaveMessage(msg.ChatId, "BOT", botReply);
                             }
                         }
-                    }
-
-                    response.StatusCode = 200;
-                }
-                else if (request.HttpMethod == "POST" && path.StartsWith("/api/user/"))
-                {
-                    var login = path.Split('/').Last();
-                    using var reader = new StreamReader(request.InputStream);
-                    var body = await reader.ReadToEndAsync();
-                    var updates = JsonSerializer.Deserialize<Dictionary<string, object>>(body);
-
-                    if (AuthService.Instance.UpdateUser(login, updates))
                         response.StatusCode = 200;
+                        response.Close();
+                    }
+                    // POST: /api/user/{login} - оновити профіль користувача
+                    else if (request.HttpMethod == "POST" && path.StartsWith("/api/user/"))
+                    {
+                        var login = path.Split('/').Last();
+                        using var reader = new StreamReader(request.InputStream);
+                        var body = await reader.ReadToEndAsync();
+                        var updates = JsonSerializer.Deserialize<Dictionary<string, object>>(body);
+
+                        if (updates != null)
+                        {
+                            string nickname = updates.TryGetValue("nickname", out var nick) ? nick?.ToString() ?? "" : "";
+                            string avatarPath = updates.TryGetValue("avatarPath", out var avatar) ? avatar?.ToString() ?? "" : "";
+                            DateTime? birthDate = null;
+
+                            if (updates.TryGetValue("birthDate", out var birth) && birth != null)
+                            {
+                                birthDate = DateTime.Parse(birth.ToString());
+                            }
+
+                            var result = await FileDatabase.Instance.UpdateUser(login, nickname, avatarPath, birthDate);
+                            response.StatusCode = result ? 200 : 404;
+                        }
+                        else
+                        {
+                            response.StatusCode = 400;
+                        }
+                        response.Close();
+                    }
+                    // POST: /api/todos - створити нову задачу
+                    else if (request.HttpMethod == "POST" && path == "/api/todos")
+                    {
+                        using var reader = new StreamReader(request.InputStream);
+                        var body = await reader.ReadToEndAsync();
+                        var item = JsonSerializer.Deserialize<TodoItem>(body);
+
+                        if (item != null)
+                        {
+                            await FileDatabase.Instance.CreateTodo(
+                                item.ChatId,
+                                item.Title,
+                                item.Description,
+                                item.CreatedBy,
+                                item.DueDate
+                            );
+                        }
+                        response.StatusCode = 200;
+                        response.Close();
+                    }
+                    // PUT: /api/todos/{id} - оновити статус задачі
+                    else if (request.HttpMethod == "PUT" && path.StartsWith("/api/todos/"))
+                    {
+                        var idStr = path.Split('/').Last();
+                        if (int.TryParse(idStr, out int id))
+                        {
+                            using var reader = new StreamReader(request.InputStream);
+                            var body = await reader.ReadToEndAsync();
+                            var updates = JsonSerializer.Deserialize<Dictionary<string, object>>(body);
+
+                            if (updates != null && updates.TryGetValue("isCompleted", out var isCompleted))
+                            {
+                                await FileDatabase.Instance.UpdateTodoStatus(id, Convert.ToBoolean(isCompleted));
+                                response.StatusCode = 200;
+                            }
+                            else
+                            {
+                                response.StatusCode = 400;
+                            }
+                        }
+                        else
+                        {
+                            response.StatusCode = 400;
+                        }
+                        response.Close();
+                    }
+                    // DELETE: /api/todos/{id} - видалити задачу
+                    else if (request.HttpMethod == "DELETE" && path.StartsWith("/api/todos/"))
+                    {
+                        var idStr = path.Split('/').Last();
+                        if (int.TryParse(idStr, out int id))
+                        {
+                            await FileDatabase.Instance.DeleteTodo(id);
+                            response.StatusCode = 200;
+                        }
+                        else
+                        {
+                            response.StatusCode = 400;
+                        }
+                        response.Close();
+                    }
                     else
+                    {
                         response.StatusCode = 404;
+                        response.Close();
+                    }
                 }
-
-
-                response.Close();
-               
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Server error: {ex.Message}");
+                    response.StatusCode = 500;
+                    response.Close();
+                }
             }
         }
 
-                private string GetBotReply(string userMessage)
+        private void SendResponse(HttpListenerResponse response, string json)
+        {
+            var buffer = Encoding.UTF8.GetBytes(json);
+            response.ContentType = "application/json";
+            response.ContentLength64 = buffer.Length;
+            response.OutputStream.Write(buffer, 0, buffer.Length);
+            response.Close();
+        }
+
+        private string GetBotReply(string userMessage)
         {
             string msg = userMessage.ToLower();
 
-            if (msg.Contains("hello") || msg.Contains("hi") || msg.Contains("Hi"))
-                return "Hello how are you";
+            if (msg.Contains("hello") || msg.Contains("hi"))
+                return "Hello! How are you?";
 
-            if (msg.Contains("how are you") || msg.Contains("you?"))
-                return "i am good, what about you?";
+            if (msg.Contains("how are you"))
+                return "I am good, what about you?";
 
-            if (msg.Contains("help") || msg.Contains("please help"))
-                return "what kind of problem you have?.";
+            if (msg.Contains("help"))
+                return "How can I help you?";
 
             if (msg.Contains("thank you") || msg.Contains("thanks"))
-                return "Always happy to help!";
+                return "You're welcome!";
 
-            if (msg.Contains("bot") || msg.Contains("are you a bot"))
-                return "No, I'm a gamer stuck in the matrix but I guess I'm a bot...";
+            if (msg.Contains("bot"))
+                return "Yes, I'm a bot assistant!";
 
             return "";
         }
     }
-        }
+}

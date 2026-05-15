@@ -1,17 +1,15 @@
-﻿namespace MessageApp
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace MessageApp
 {
     public class AuthService
     {
         private static AuthService? _instance;
         public static AuthService Instance => _instance ??= new AuthService();
 
-
-        private List<User> _users = new()
-        {
-            new User { Login = "Sasha", Password = "1234", Nickname = "Sasha", AvatarPath = "", BirthDate = null },
-            new User { Login = "Andriy", Password = "1234", Nickname = "Andriy", AvatarPath = "", BirthDate = null },
-            new User { Login = "Artem", Password = "1234", Nickname = "Artem", AvatarPath = "", BirthDate = null }
-        };
+        private AuthService() { }
 
         public bool Register(string login, string password, out string error)
         {
@@ -23,50 +21,49 @@
                 return false;
             }
 
-            if (_users.Any(u => u.Login == login))
+            var result = FileDatabase.Instance.RegisterUser(login, password).Result;
+            if (!result)
             {
                 error = "User already exists";
                 return false;
             }
 
-            _users.Add(new User { Login = login, Password = password });
             return true;
         }
-        public User? GetUser(string login)
-        {
-            return _users.FirstOrDefault(u => u.Login == login);
-        }
-
-        public bool UpdateUser(string login, Dictionary<string, object> updates)
-        {
-            var user = GetUser(login);
-            if (user == null) return false;
-
-            if (updates.TryGetValue("nickname", out var nickname))
-                user.Nickname = nickname?.ToString() ?? user.Login;
-            if (updates.TryGetValue("avatarPath", out var avatarPath))
-                user.AvatarPath = avatarPath?.ToString() ?? "";
-            if (updates.TryGetValue("birthDate", out var birthDate) && birthDate != null)
-                user.BirthDate = DateTime.Parse(birthDate.ToString());
-
-            return true;
-        }
-
 
         public bool Login(string login, string password, out string error)
         {
             error = "";
 
-            var user = _users.FirstOrDefault(u => u.Login == login && u.Password == password);
-
-            if (user == null)
+            var isValid = FileDatabase.Instance.ValidateUser(login, password).Result;
+            if (!isValid)
             {
                 error = "Wrong login or password";
                 return false;
             }
 
             return true;
+        }
 
+        public FileDatabase.UserData? GetUser(string login)
+        {
+            return FileDatabase.Instance.GetUser(login).Result;
+        }
+
+        public bool UpdateUser(string login, Dictionary<string, object> updates)
+        {
+            string nickname = "";
+            string avatarPath = "";
+            DateTime? birthDate = null;
+
+            if (updates.TryGetValue("nickname", out var nick))
+                nickname = nick?.ToString() ?? "";
+            if (updates.TryGetValue("avatarPath", out var avatar))
+                avatarPath = avatar?.ToString() ?? "";
+            if (updates.TryGetValue("birthDate", out var birth) && birth != null)
+                birthDate = DateTime.Parse(birth.ToString());
+
+            return FileDatabase.Instance.UpdateUser(login, nickname, avatarPath, birthDate).Result;
         }
     }
 }
