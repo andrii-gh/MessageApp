@@ -45,6 +45,19 @@ namespace MessageApp
 
         }
 
+        private void OpenTaskManager_Click(object sender, RoutedEventArgs e)
+        {
+            if (currentChatId == 0)
+            {
+                MessageBox.Show("Please select a chat first", "Info",
+                    MessageBoxButton.OK, MessageBoxImage.Information);
+                return;
+            }
+
+            var todoWindow = new TodoWindow(currentChatId);
+            todoWindow.Owner = this;
+            todoWindow.ShowDialog();
+        }
         private async void LoadChats()
         {
             allChats = await service.GetChats();
